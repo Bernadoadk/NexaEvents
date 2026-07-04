@@ -6,6 +6,7 @@ import prisma from "../db.server";
 import { uploadToCloudinary, deleteFromCloudinary, isCloudinaryUrl } from "../lib/cloudinary.server";
 import { getShopPlan, planAtLeast, syncBillingFromShopify } from "../lib/plan.server";
 import { Icon, useToast, ColorPicker, CloudinaryLogoUploader, Toggle } from "../components/ui";
+import { requestShopifyReviewAfterSuccessfulWorkflow } from "../lib/reviews.client";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -189,15 +190,22 @@ export default function PortalEditorPage() {
     if (navigation.state === "submitting") wasSaving.current = true;
     if (navigation.state === "idle" && wasSaving.current) {
       wasSaving.current = false;
-      if ((actionData as any)?.success) {
+      const saveSucceeded =
+        actionData &&
+        typeof actionData === "object" &&
+        "success" in actionData &&
+        actionData.success;
+
+      if (saveSucceeded) {
         toast({ kind: "success", title: "Portal updated & published!" });
+        requestShopifyReviewAfterSuccessfulWorkflow();
         if (pendingOpen) {
           setPendingOpen(false);
           window.open(`/portal?shop=${shop}`, "_blank");
         }
       }
     }
-  }, [navigation.state, actionData, pendingOpen, shop]);
+  }, [navigation.state, actionData, pendingOpen, shop, toast]);
 
   const set = <K extends keyof EditorSettings>(key: K, value: EditorSettings[K]) =>
     setS(prev => ({ ...prev, [key]: value }));
@@ -410,6 +418,13 @@ export default function PortalEditorPage() {
           <AccordionSection title="Texts" icon="Type" open={openSection === "texts"} onToggle={() => toggle("texts")}>
             <TextsSection s={s} set={set} isPro={isPro} />
           </AccordionSection>
+
+          <div className="m-4 mt-auto rounded-md border border-divider bg-bg/35 px-3 py-2.5 text-[11.5px] text-muted leading-relaxed flex gap-2">
+            <Icon name="Info" size={13} className="text-faint shrink-0 mt-0.5" />
+            <span>
+              Shopify may ask for a quick review when your shop is eligible. Your feedback helps us improve the app.
+            </span>
+          </div>
         </div>
 
         {/* Right — preview */}
