@@ -123,3 +123,5 @@ Allow `SHOP_REDACT` webhook to process without admin context
 ## v2024.07.16
 
 Started tracking changes and releases using calver
+
+Ok!
